@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../crypto/.idea/crypto.iml" filepath="$PROJECT_DIR$/../crypto/.idea/crypto.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../crypto-excel/.idea/crypto-excel.iml" filepath="$PROJECT_DIR$/../crypto-excel/.idea/crypto-excel.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../dropstab/.idea/dropstab.iml" filepath="$PROJECT_DIR$/../dropstab/.idea/dropstab.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/parser.iml" filepath="$PROJECT_DIR$/.idea/parser.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../ttm/.idea/ttm.iml" filepath="$PROJECT_DIR$/../ttm/.idea/ttm.iml" />
+    </modules>
+  </component>
+</project>
