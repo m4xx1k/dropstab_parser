@@ -13,26 +13,35 @@ let coinsLength = 0
 const getUrl = num => num === 1 ? "https://dropstab.com/?s=100" : `https://dropstab.com/?p=${num}&s=100`
 
 let getNormalizedData = (coinData) => {
-    let res = {}
+    let res = {...coinData}
     let multipliers = {"M": 10 ** 6, "B": 10 ** 9, "T": 10 ** 12}
-    res.img = coinData.img
-    res.name = coinData.name
-    res.price = Number(coinData.price.replace(',', '').slice(1))
-    res.ath_price = Number(coinData.ath_price.replace(',', '').slice(1))
-    res.atl_price = Number(coinData.atl_price.replace(',', '').slice(1))
+
+    const price = Number(coinData.price.replace(',', '').slice(1))
+    res.price = Number.isNaN(price) ? 0 : price
+
+
+
+    const ath_price = Number(coinData.ath_price.replace(',', '').slice(1))
+    res.ath_price = Number.isNaN(ath_price) ? 0 : ath_price
+
+    const atl_price = Number(coinData.atl_price.replace(',', '').slice(1))
+    res.atl_price = Number.isNaN(atl_price) ? 0 : atl_price
 
     res.ath_time = dayjs(coinData.ath_time).format("DD.MM.YYYY")
     res.atl_time = dayjs(coinData.atl_time).format("DD.MM.YYYY")
 
-    res.market_cap =
-        (Number(coinData.market_cap.replace(',', '').split(' ')[0].slice(1))
-        *
-        multipliers[coinData.market_cap.split(' ')[1]]).toFixed(0)
+
+    const market_cap =
+        Number(coinData.market_cap.replace(',', '').split(' ')[0].slice(1))
+            *
+            multipliers[coinData.market_cap.split(' ')[1]].toFixed(0)
+    res.market_cap = Number.isNaN(market_cap) ? 0 : market_cap
     res.total_supply =
-        Number(coinData.total_supply.replace(',', '').split(' ')[0]
-        *
-        multipliers[coinData.total_supply.split(' ')[1]]).toFixed(0)
-        || 0
+        coinData.total_supply === '--' ? 0 :
+            (Number(coinData.total_supply.replace(',', '').split(' ')[0])
+                *
+                (multipliers[coinData.total_supply.split(' ')[1]] || 1)).toFixed(0)
+
     return res
 }
 
@@ -47,16 +56,22 @@ const getNames = async () => {
 const getCoinInfo = async ({pageDom, shortCoin, coin}) => {
     coinsList = coinsList.filter(coin => coin !== shortCoin)
     const coinData = {}
+
     const coinUrl = baseUrl + pageDom(coin).attr('href')
     const coinPage = await axios.get(coinUrl)
     const coinPageDom = cheerio.load(coinPage.data)
+
     coinData.name = shortCoin
+    coinData.full_name = coinPageDom("h1.mr-1.min-w-0.truncate.text-xl.font-bold").text().trim()
     coinData.img = coinPageDom("img.block.h-8.w-8.rounded-full.bg-white.object-contain").attr('src')
     coinPageDom("div.min-w-0>div.mt-6>dl.font-medium>div").each((i, elem) => {
-        if (i === 5) coinData.total_supply = coinPageDom(elem).find('div>dd>span').text().trim()
+        if (i === 5) {
+            coinData.total_supply = coinPageDom(elem).find('div>dd>span').text().trim()
+        }
     })
-    let stat = coinPageDom(".block.grid-cols-2.gap-x-4")
-    stat.each((i, elem) => {
+
+
+    coinPageDom(".block.grid-cols-2.gap-x-4").each((_, elem) => {
         coinPageDom(elem).find('div').each((i, statEl) => {
             let statElDom = coinPageDom(statEl)
             if (i === 0) {
@@ -75,8 +90,10 @@ const getCoinInfo = async ({pageDom, shortCoin, coin}) => {
             }
         })
     })
+
     let parsedPercentage = ((parsedCoinsCounter / coinsLength) * 100).toFixed(1)
     let spentTime = ((Date.now() - started) / 1000).toFixed(0)
+
     try {
         let findCoin = await Coin.findOne({name: coinData.name})
         if (Boolean(findCoin)) {
@@ -85,10 +102,10 @@ const getCoinInfo = async ({pageDom, shortCoin, coin}) => {
             await Coin.create(getNormalizedData(coinData))
         }
         let isNewCoin = Boolean(findCoin) ? 'updated' : 'new'
-        console.log(`${parsedPercentage}%---${spentTime}s---------${isNewCoin}-------remains ${coinsList.length}-----${coinData.name}`)
+        console.log(`${parsedPercentage}%---${spentTime}s---------${isNewCoin}-------remains ${coinsList.length}-----${coinData.full_name}`)
         parsedCoinsCounter++
     } catch (e) {
-        console.log("ERROR\n", e)
+        console.log(e)
     }
 }
 
@@ -125,7 +142,7 @@ async function parse() {
         for (let pageNum = 1; pageNum <= pagesNum; pageNum++) {
             if (coinsList.length !== 0) {
                 const pageCoins = await parsePage(pageNum)
-                console.log(`===================${pageNum}===============`)
+                console.log(`================PAGE=${pageNum}===============`)
                 for (const coin of pageCoins) {
                     await getCoinInfo(coin)
                     coinsList = coinsList.filter(coin => coin !== coin.shortName)
@@ -137,11 +154,15 @@ async function parse() {
     } catch (e) {
         console.log(e)
     } finally {
-        console.log(coinsList)
+        if(!coinsList.length){
+            console.log('not parsed coins:')
+            console.log(coinsList)
+        }
         coinsList = await getNames()
 
         parsedCoinsCounter = 1
     }
 }
+
 
 schedule.scheduleJob('*/15 * * * *', async ()=>{await parse()})

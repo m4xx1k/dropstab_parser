@@ -5,16 +5,20 @@ const schema = new db.Schema({
         type: String,
         required: true
     },
+    full_name:{
+        type:String,
+        required:true
+    },
     img:{
         type:String,
         required:true
     },
     price: {
-        type: String,
+        type: Number,
         required: true
     },
     ath_price: {
-        type: String,
+        type: Number,
         required: true
     },
     ath_time: {
@@ -22,7 +26,7 @@ const schema = new db.Schema({
         required: true
     },
     atl_price: {
-        type: String,
+        type: Number,
         required: true
     },
     atl_time: {
@@ -30,11 +34,11 @@ const schema = new db.Schema({
         required: true
     },
     market_cap: {
-        type: String,
+        type: Number,
         required: true
     },
     total_supply:{
-        type:String,
+        type:Number,
         required:true
     }
 
