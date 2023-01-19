@@ -97,12 +97,11 @@ const getCoinInfo = async ({pageDom, shortCoin, coin}) => {
     try {
         let findCoin = await Coin.findOne({name: coinData.name})
         if (Boolean(findCoin)) {
-            await Coin.updateOne({name: coinData.name}, getNormalizedData(coinData))
+            await Coin.updateOne({name: coinData.name}, getNormalizedData({...coinData, c1:1,c2:1,c3:1,c4:1,c5:1,c6:1,c7:1,c8:1,c9:1,c10:1,}))
         } else {
-            await Coin.create(getNormalizedData(coinData))
+            await Coin.create(getNormalizedData({...coinData, c1:1,c2:1,c3:1,c4:1,c5:1,c6:1,c7:1,c8:1,c9:1,c10:1,}))
         }
-        let isNewCoin = Boolean(findCoin) ? 'updated' : 'new'
-        console.log(`${parsedPercentage}%---${spentTime}s---------${isNewCoin}-------remains ${coinsList.length}-----${coinData.full_name}`)
+        console.log(`${parsedPercentage}%---${spentTime}s-------remains ${coinsList.length}-----${coinData.name}`)
         parsedCoinsCounter++
     } catch (e) {
         console.log(e)
