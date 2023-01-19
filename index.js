@@ -32,9 +32,9 @@ let getNormalizedData = (coinData) => {
 
 
     const market_cap =
-        Number(coinData.market_cap.replace(',', '').split(' ')[0].slice(1))
+        (Number(coinData.market_cap.replace(',', '').split(' ')[0].slice(1))
             *
-            multipliers[coinData.market_cap.split(' ')[1]].toFixed(0)
+            (multipliers[coinData.market_cap.split(' ')[1]] || 1)).toFixed(0)
     res.market_cap = Number.isNaN(market_cap) ? 0 : market_cap
     res.total_supply =
         coinData.total_supply === '--' ? 0 :
@@ -164,5 +164,5 @@ async function parse() {
     }
 }
 
-
-schedule.scheduleJob('*/15 * * * *', async ()=>{await parse()})
+parse()
+//schedule.scheduleJob('*/15 * * * *', async ()=>{await parse()})
