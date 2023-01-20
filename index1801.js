@@ -94,7 +94,8 @@ const getCoinInfo = async ({pageDom, shortCoin, coin}) => {
             await Coin.create(getNormalizedData(coinData))
         }
         let isNewCoin = Boolean(findCoin) ? 'updated' : 'new'
-        console.log(`${parsedPercentage}%---${spentTime}s---------${isNewCoin}-------remains ${coinsList.length}-----${coinData.name}`)
+        const currentTime = new Date().toTimeString()
+        console.log(`[${currentTime.split(" ")[0]}]--${parsedPercentage}%---${spentTime}s-------remains ${coinsList.length}-----${coinData.name}`)
         parsedCoinsCounter++
     } catch (e) {
         console.log("ERROR\n", e)
@@ -107,6 +108,7 @@ const parsePage = async (pageNum) => {
     const page = await axios.get(pageUrl)
     const pageDom = cheerio.load(page.data)
     let coins = pageDom(".styles_wrapper__1cauJ.tableCellSpacing")
+    console.log(coins.length)
     if(coins.length !== 200){
         let pageUrl = getUrl(pageNum)
         const page = await axios.get(pageUrl)
@@ -115,6 +117,8 @@ const parsePage = async (pageNum) => {
         coins.each(async (i, coin) => {
             let shortCoin = pageDom(coin).find('.relative.min-w-0.overflow-hidden.pr-1.font-semibold.uppercase').text().trim()
             if (coinsList.includes(shortCoin)) res.push({pageDom, shortCoin, coin})
+            console.log('again',coins.length)
+
         })
     }
     coins.each(async (i, coin) => {
@@ -122,7 +126,6 @@ const parsePage = async (pageNum) => {
         if (coinsList.includes(shortCoin)) res.push({pageDom, shortCoin, coin})
     })
 
-    console.log(coins.length)
     return res
 }
 
@@ -159,10 +162,17 @@ async function parse() {
         console.log(e)
     } finally {
         console.log(coinsList)
-        coinsList = await getNames()
 
         parsedCoinsCounter = 1
     }
 }
 parse()
-schedule.scheduleJob('*/10 * * * *', async ()=>{await parse()})
+schedule.scheduleJob('*/10 * * * *', async ()=>{
+    await parse()
+    if(coinsList.length!==0) {
+        console.log('again parse')
+        await parse()
+    }
+    coinsList = await getNames()
+
+})
