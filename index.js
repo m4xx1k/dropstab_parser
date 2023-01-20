@@ -169,7 +169,7 @@ async function parse() {
 }
 
 parse()
-schedule.scheduleJob('*/10 * * * *', async ()=>{
+schedule.scheduleJob('*/15 * * * *', async ()=>{
     coinsList = await getNames()
     await parse()
     if(coinsList.length!==0) {
