@@ -11,7 +11,6 @@ let coinsList = []
 let coinsLength = 0
 
 const getUrl = num => num === 1 ? "https://dropstab.com/?s=100" : `https://dropstab.com/?p=${num}&s=100`
-
 let getNormalizedData = (coinData) => {
     let res = {...coinData}
     let multipliers = {"M": 10 ** 6, "B": 10 ** 9, "T": 10 ** 12}
@@ -45,34 +44,28 @@ let getNormalizedData = (coinData) => {
     return res
 }
 
+
 const getNames = async () => {
     let res = []
     let names = await Coin.find({})
     names.forEach(elem => res.push(elem.name))
     coinsLength = res.length
-    console.log(`parsed ${res.length} names from db`)
     return res
 }
 
-const getCoinInfo = async ({pageDom, shortCoin, coin, pageNum}) => {
-    // coinsList = coinsList.filter(coin => coin !== shortCoin)
+const getCoinInfo = async ({pageDom, shortCoin, coin}) => {
+    coinsList = coinsList.filter(coin => coin !== shortCoin)
     const coinData = {}
-
     const coinUrl = baseUrl + pageDom(coin).attr('href')
     const coinPage = await axios.get(coinUrl)
     const coinPageDom = cheerio.load(coinPage.data)
-
     coinData.name = shortCoin
-    coinData.full_name = coinPageDom("h1.mr-1.min-w-0.truncate.text-xl.font-bold").text().trim()
     coinData.img = coinPageDom("img.block.h-8.w-8.rounded-full.bg-white.object-contain").attr('src')
     coinPageDom("div.min-w-0>div.mt-6>dl.font-medium>div").each((i, elem) => {
-        if (i === 5) {
-            coinData.total_supply = coinPageDom(elem).find('div>dd>span').text().trim()
-        }
+        if (i === 5) coinData.total_supply = coinPageDom(elem).find('div>dd>span').text().trim()
     })
-
-
-    coinPageDom(".block.grid-cols-2.gap-x-4").each((_, elem) => {
+    let stat = coinPageDom(".block.grid-cols-2.gap-x-4")
+    stat.each((i, elem) => {
         coinPageDom(elem).find('div').each((i, statEl) => {
             let statElDom = coinPageDom(statEl)
             if (i === 0) {
@@ -91,10 +84,8 @@ const getCoinInfo = async ({pageDom, shortCoin, coin, pageNum}) => {
             }
         })
     })
-
     let parsedPercentage = ((parsedCoinsCounter / coinsLength) * 100).toFixed(1)
     let spentTime = ((Date.now() - started) / 1000).toFixed(0)
-
     try {
         let findCoin = await Coin.findOne({name: coinData.name})
         if (Boolean(findCoin)) {
@@ -102,11 +93,11 @@ const getCoinInfo = async ({pageDom, shortCoin, coin, pageNum}) => {
         } else {
             await Coin.create(getNormalizedData(coinData))
         }
-        const currentTime = new Date().toTimeString()
-        console.log(`[${currentTime.split(" ")[0]}]-${pageNum}p-${parsedPercentage}%---${spentTime}s-------remains ${coinsList.length}-----${coinData.name}`)
+        let isNewCoin = Boolean(findCoin) ? 'updated' : 'new'
+        console.log(`${parsedPercentage}%---${spentTime}s---------${isNewCoin}-------remains ${coinsList.length}-----${coinData.name}`)
         parsedCoinsCounter++
     } catch (e) {
-        console.log(e)
+        console.log("ERROR\n", e)
     }
 }
 
@@ -116,17 +107,10 @@ const parsePage = async (pageNum) => {
     const page = await axios.get(pageUrl)
     const pageDom = cheerio.load(page.data)
     let coins = pageDom(".styles_wrapper__1cauJ.tableCellSpacing")
-    let coinNames= ''
     coins.each(async (i, coin) => {
         let shortCoin = pageDom(coin).find('.relative.min-w-0.overflow-hidden.pr-1.font-semibold.uppercase').text().trim()
-        if (coinsList.includes(shortCoin)) {
-            coinNames+=shortCoin+', '
-            res.push({pageDom, shortCoin, coin})
-            coinsList = coinsList.filter(coin => coin !== shortCoin)
-
-        }
+        if (coinsList.includes(shortCoin)) res.push({pageDom, shortCoin, coin})
     })
-    console.log('parsed page #'+pageNum)
     return res
 }
 
@@ -138,7 +122,6 @@ const getPagesLength = async () => {
         if (i === 6)
             res = firstPageDom(elem).find('button>span').text().trim()
     })
-    console.log('parsed pages length')
     return res
 }
 
@@ -150,30 +133,24 @@ async function parse() {
         console.log(`========= STARTED ${new Date().toTimeString()} =========`)
         for (let pageNum = 1; pageNum <= pagesNum; pageNum++) {
             if (coinsList.length !== 0) {
-                let remainsCoins = pageNum > 8 ? 'Remains=Coins=' + coinsList.join(", ") : '='
-                console.log(`================PAGE=${pageNum}==============${remainsCoins}`)
                 const pageCoins = await parsePage(pageNum)
+                console.log(`===================${pageNum}===============`)
                 for (const coin of pageCoins) {
-                    await getCoinInfo({...coin, pageNum})
+                    await getCoinInfo(coin)
+                    coinsList = coinsList.filter(coin => coin !== coin.shortName)
                 }
 
             }
 
         }
-        console.log(coinsList)
     } catch (e) {
         console.log(e)
     } finally {
-        if(!coinsList.length){
-            console.log('not parsed coins:')
-            console.log(coinsList)
-        }
+        console.log(coinsList)
         coinsList = await getNames()
-
 
         parsedCoinsCounter = 1
     }
 }
-
 parse()
 schedule.scheduleJob('*/15 * * * *', async ()=>{await parse()})
