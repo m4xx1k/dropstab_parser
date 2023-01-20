@@ -54,7 +54,6 @@ const getNames = async () => {
 }
 
 const getCoinInfo = async ({pageDom, shortCoin, coin}) => {
-    coinsList = coinsList.filter(coin => coin !== shortCoin)
     const coinData = {}
     const coinUrl = baseUrl + pageDom(coin).attr('href')
     const coinPage = await axios.get(coinUrl)
@@ -87,13 +86,8 @@ const getCoinInfo = async ({pageDom, shortCoin, coin}) => {
     let parsedPercentage = ((parsedCoinsCounter / coinsLength) * 100).toFixed(1)
     let spentTime = ((Date.now() - started) / 1000).toFixed(0)
     try {
-        let findCoin = await Coin.findOne({name: coinData.name})
-        if (Boolean(findCoin)) {
-            await Coin.updateOne({name: coinData.name}, getNormalizedData(coinData))
-        } else {
-            await Coin.create(getNormalizedData(coinData))
-        }
-        let isNewCoin = Boolean(findCoin) ? 'updated' : 'new'
+        await Coin.updateOne({name: coinData.name}, getNormalizedData(coinData))
+        coinsList = coinsList.filter(coin => coin !== shortCoin)
         const currentTime = new Date().toTimeString()
         console.log(`[${currentTime.split(" ")[0]}]--${parsedPercentage}%---${spentTime}s-------remains ${coinsList.length}-----${coinData.name}`)
         parsedCoinsCounter++
@@ -142,7 +136,6 @@ const getPagesLength = async () => {
 
 async function parse() {
     try {
-        coinsList = await getNames()
         const pagesNum = await getPagesLength()
         started = Date.now()
         console.log(`========= STARTED ${new Date().toTimeString()} =========`)
@@ -168,11 +161,12 @@ async function parse() {
 }
 parse()
 schedule.scheduleJob('*/10 * * * *', async ()=>{
+    coinsList = await getNames()
     await parse()
     if(coinsList.length!==0) {
         console.log('again parse')
         await parse()
     }
-    coinsList = await getNames()
 
 })
+

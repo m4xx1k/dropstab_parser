@@ -55,7 +55,7 @@ const getNames = async () => {
 }
 
 const getCoinInfo = async ({pageDom, shortCoin, coin, pageNum}) => {
-    // coinsList = coinsList.filter(coin => coin !== shortCoin)
+     coinsList = coinsList.filter(coin => coin !== shortCoin)
     const coinData = {}
 
     const coinUrl = baseUrl + pageDom(coin).attr('href')
@@ -96,17 +96,13 @@ const getCoinInfo = async ({pageDom, shortCoin, coin, pageNum}) => {
     let spentTime = ((Date.now() - started) / 1000).toFixed(0)
 
     try {
-        let findCoin = await Coin.findOne({name: coinData.name})
-        if (Boolean(findCoin)) {
-            await Coin.updateOne({name: coinData.name}, getNormalizedData(coinData))
-        } else {
-            await Coin.create(getNormalizedData(coinData))
-        }
+        await Coin.updateOne({name: coinData.name}, getNormalizedData(coinData))
+        coinsList = coinsList.filter(coin => coin !== shortCoin)
         const currentTime = new Date().toTimeString()
-        console.log(`[${currentTime.split(" ")[0]}]-${pageNum}p-${parsedPercentage}%---${spentTime}s-------remains ${coinsList.length}-----${coinData.name}`)
+        console.log(`[${currentTime.split(" ")[0]}]--${parsedPercentage}%---${spentTime}s-------remains ${coinsList.length}-----${coinData.name}`)
         parsedCoinsCounter++
     } catch (e) {
-        console.log(e)
+        console.log("ERROR\n", e)
     }
 }
 
@@ -122,8 +118,6 @@ const parsePage = async (pageNum) => {
         if (coinsList.includes(shortCoin)) {
             coinNames+=shortCoin+', '
             res.push({pageDom, shortCoin, coin})
-            coinsList = coinsList.filter(coin => coin !== shortCoin)
-
         }
     })
     console.log('parsed page #'+pageNum)
@@ -144,7 +138,7 @@ const getPagesLength = async () => {
 
 async function parse() {
     try {
-        coinsList = await getNames()
+        //coinsList = await getNames()
         const pagesNum = await getPagesLength()
         started = Date.now()
         console.log(`========= STARTED ${new Date().toTimeString()} =========`)
@@ -168,7 +162,6 @@ async function parse() {
             console.log('not parsed coins:')
             console.log(coinsList)
         }
-        coinsList = await getNames()
 
 
         parsedCoinsCounter = 1
@@ -176,4 +169,12 @@ async function parse() {
 }
 
 parse()
-schedule.scheduleJob('*/15 * * * *', async ()=>{await parse()})
+schedule.scheduleJob('*/10 * * * *', async ()=>{
+    coinsList = await getNames()
+    await parse()
+    if(coinsList.length!==0) {
+        console.log('again parse')
+        await parse()
+    }
+
+})
