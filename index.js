@@ -65,7 +65,7 @@ const getCoinInfo = async ({pageDom, shortCoin, coin, pageNum}) => {
 
     coinData.name = shortCoin
     coinData.full_name = coinPageDom("h1.mr-1.min-w-0.truncate.text-xl.font-bold").text().trim()
-    coinData.img = coinPageDom("img.block.h-8.w-8.rounded-full.bg-white.object-contain").attr('src')
+    coinData.img = coinPageDom('meta[property="og:image"]').attr('content')
     coinPageDom("div.min-w-0>div.mt-6>dl.font-medium>div").each((i, elem) => {
         if (i === 5) {
             coinData.total_supply = coinPageDom(elem).find('div>dd>span').text().trim()
