@@ -29,6 +29,10 @@ const schema = new db.Schema({
         type: String,
         required: true
     },
+    full_name:{
+      type:String,
+      required:true
+    },
     market_cap: {
         type: String,
         required: true
