@@ -107,10 +107,22 @@ const parsePage = async (pageNum) => {
     const page = await axios.get(pageUrl)
     const pageDom = cheerio.load(page.data)
     let coins = pageDom(".styles_wrapper__1cauJ.tableCellSpacing")
+    if(coins.length !== 200){
+        let pageUrl = getUrl(pageNum)
+        const page = await axios.get(pageUrl)
+        const pageDom = cheerio.load(page.data)
+        coins = pageDom(".styles_wrapper__1cauJ.tableCellSpacing")
+        coins.each(async (i, coin) => {
+            let shortCoin = pageDom(coin).find('.relative.min-w-0.overflow-hidden.pr-1.font-semibold.uppercase').text().trim()
+            if (coinsList.includes(shortCoin)) res.push({pageDom, shortCoin, coin})
+        })
+    }
     coins.each(async (i, coin) => {
         let shortCoin = pageDom(coin).find('.relative.min-w-0.overflow-hidden.pr-1.font-semibold.uppercase').text().trim()
         if (coinsList.includes(shortCoin)) res.push({pageDom, shortCoin, coin})
     })
+
+    console.log(coins.length)
     return res
 }
 
@@ -153,4 +165,4 @@ async function parse() {
     }
 }
 parse()
-schedule.scheduleJob('*/15 * * * *', async ()=>{await parse()})
+schedule.scheduleJob('*/10 * * * *', async ()=>{await parse()})
