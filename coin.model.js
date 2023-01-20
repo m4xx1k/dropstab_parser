@@ -7,7 +7,7 @@ const schema = new db.Schema({
     },
     img:{
         type:String,
-        required:true
+        required:false
     },
     price: {
         type: String,

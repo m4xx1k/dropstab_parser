@@ -859,12 +859,14 @@ const getCoinInfo = async ({pageDom, shortCoin, coin, pageNum}) => {
 
     try {
 
-        let findCoin = await Coin.findOne({name: coinData.name})
-        if (Boolean(findCoin)) {
-            await Coin.updateOne({name: coinData.name}, getNormalizedData({...coinData, c1:1,c2:1,c3:1,c4:1,c5:1,c6:1,c7:1,c8:1,c9:1,c10:1,}))
-        } else {
-            await Coin.create(getNormalizedData({...coinData, c1:1,c2:1,c3:1,c4:1,c5:1,c6:1,c7:1,c8:1,c9:1,c10:1,}))
-        }
+        // let findCoin = await Coin.findOne({name: coinData.name})
+        // console.log(getNormalizedData({...coinData, c1:1,c2:1,c3:1,c4:1,c5:1,c6:1,c7:1,c8:1,c9:1,c10:1}))
+        // if (Boolean(findCoin)) {
+        //     await Coin.updateOne({name: coinData.name}, getNormalizedData({...coinData, c1:1,c2:1,c3:1,c4:1,c5:1,c6:1,c7:1,c8:1,c9:1,c10:1}))
+        // } else {
+        // }
+        await Coin.create(getNormalizedData({...coinData, c1:1,c2:1,c3:1,c4:1,c5:1,c6:1,c7:1,c8:1,c9:1,c10:1}))
+
         coinsList = coinsList.filter(coin => coin !== shortCoin)
         const currentTime = new Date().toTimeString()
         console.log(`[${currentTime.split(" ")[0]}]--${parsedPercentage}%---${spentTime}s-------remains ${coinsList.length}-----${coinData.name}`)
